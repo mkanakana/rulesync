@@ -1,4 +1,6 @@
 {
+  "$schema": "./schemas/rulesync.schema.json",
+
   // List of tools to generate configurations for
   "targets": ["cursor", "claudecode", "geminicli", "codexcli", "copilot", "opencode"],
 
