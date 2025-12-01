@@ -30,8 +30,7 @@
 		"rulesync": "dist/index.js"
 	},
 	"files": [
-		"dist",
-		"schemas"
+		"dist"
 	],
 	"scripts": {
 		"bcheck": "biome check .",
@@ -53,7 +52,7 @@
 		"oxlint": "oxlint . --max-warnings 0",
 		"oxlint:fix": "oxlint . --fix --max-warnings 0",
 		"prepare": "simple-git-hooks && pnpm generate",
-		"prepublishOnly": "pnpm build && pnpm generate:schema",
+		"prepublishOnly": "pnpm build",
 		"secretlint": "secretlint --secretlintignore .gitignore \"**/*\"",
 		"sort": "sort-package-json",
 		"task": "tsx scripts/run-tasks.ts",

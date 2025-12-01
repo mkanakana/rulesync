@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import * as z from "zod";
 // Import schema directly from source - zod and zod/mini schemas are compatible in Zod v4
 import { ConfigFileSchema } from "../src/config/config.js";
@@ -14,17 +14,13 @@ const generatedSchema = z.toJSONSchema(ConfigFileSchema, {
 const jsonSchema = {
   ...generatedSchema,
   $schema: "http://json-schema.org/draft-07/schema#",
-  $id: "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schemas/rulesync.schema.json",
+  $id: "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
   title: "Rulesync Configuration",
   description: "Configuration file for Rulesync CLI tool",
 };
 
-// Ensure output directory exists
-const outputPath = join(process.cwd(), "schemas/rulesync.schema.json");
-const outputDir = dirname(outputPath);
-if (!existsSync(outputDir)) {
-  mkdirSync(outputDir, { recursive: true });
-}
+// Output to project root
+const outputPath = join(process.cwd(), "config-schema.json");
 
 // Write schema file
 writeFileSync(outputPath, JSON.stringify(jsonSchema, null, 2) + "\n");

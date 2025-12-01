@@ -85,7 +85,7 @@
     }
   },
   "additionalProperties": false,
-  "$id": "https://raw.githubusercontent.com/dyoshikawa/rulesync/main/schemas/rulesync.schema.json",
+  "$id": "https://raw.githubusercontent.com/dyoshikawa/rulesync/refs/heads/main/config-schema.json",
   "title": "Rulesync Configuration",
   "description": "Configuration file for Rulesync CLI tool"
 }
