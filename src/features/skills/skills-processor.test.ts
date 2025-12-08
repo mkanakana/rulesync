@@ -602,7 +602,7 @@ Test skill content`;
     it("should return all targets including simulated when includeSimulated is true", () => {
       const targets = SkillsProcessor.getToolTargets({ includeSimulated: true });
       expect(new Set(targets)).toEqual(
-        new Set(["agentsmd", "claudecode", "copilot", "cursor", "geminicli"]),
+        new Set(["agentsmd", "claudecode", "codexcli", "copilot", "cursor", "geminicli"]),
       );
     });
 
@@ -619,7 +619,9 @@ Test skill content`;
   describe("getToolTargetsSimulated", () => {
     it("should return simulated tool targets", () => {
       const targets = SkillsProcessor.getToolTargetsSimulated();
-      expect(new Set(targets)).toEqual(new Set(["agentsmd", "copilot", "cursor", "geminicli"]));
+      expect(new Set(targets)).toEqual(
+        new Set(["agentsmd", "codexcli", "copilot", "cursor", "geminicli"]),
+      );
     });
   });
 

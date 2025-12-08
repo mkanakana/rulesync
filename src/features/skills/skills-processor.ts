@@ -8,6 +8,7 @@ import { findFilesByGlobs } from "../../utils/file.js";
 import { logger } from "../../utils/logger.js";
 import { AgentsmdSkill } from "./agentsmd-skill.js";
 import { ClaudecodeSkill } from "./claudecode-skill.js";
+import { CodexCliSimulatedSkill } from "./codexcli-simulated-skill.js";
 import { CodexCliSkill } from "./codexcli-skill.js";
 import { CopilotSkill } from "./copilot-skill.js";
 import { CursorSkill } from "./cursor-skill.js";
@@ -22,16 +23,24 @@ import {
 } from "./tool-skill.js";
 
 /**
+ * Type for a skill class that can be used in a factory.
+ */
+type ToolSkillClass = {
+  isTargetedByRulesyncSkill(rulesyncSkill: RulesyncSkill): boolean;
+  fromRulesyncSkill(params: ToolSkillFromRulesyncSkillParams): ToolSkill;
+  fromDir(params: ToolSkillFromDirParams): Promise<ToolSkill>;
+  getSettablePaths(options?: { global?: boolean }): ToolSkillSettablePaths;
+};
+
+/**
  * Factory entry for each tool skill class.
  * Stores the class reference and metadata for a tool.
  */
 type ToolSkillFactory = {
-  class: {
-    isTargetedByRulesyncSkill(rulesyncSkill: RulesyncSkill): boolean;
-    fromRulesyncSkill(params: ToolSkillFromRulesyncSkillParams): ToolSkill;
-    fromDir(params: ToolSkillFromDirParams): Promise<ToolSkill>;
-    getSettablePaths(options?: { global?: boolean }): ToolSkillSettablePaths;
-  };
+  /** Primary class (used for global mode if globalClass is not specified) */
+  class: ToolSkillClass;
+  /** Optional class for project mode (if different from global mode) */
+  projectClass?: ToolSkillClass;
   meta: {
     /** Whether the tool supports project (workspace-level) skills */
     supportsProject: boolean;
@@ -83,7 +92,8 @@ const toolSkillFactories = new Map<SkillsProcessorToolTarget, ToolSkillFactory>(
     "codexcli",
     {
       class: CodexCliSkill,
-      meta: { supportsProject: false, supportsSimulated: false, supportsGlobal: true },
+      projectClass: CodexCliSimulatedSkill,
+      meta: { supportsProject: true, supportsSimulated: true, supportsGlobal: true },
     },
   ],
   [
@@ -110,17 +120,30 @@ const toolSkillFactories = new Map<SkillsProcessorToolTarget, ToolSkillFactory>(
 ]);
 
 /**
+ * Resolved factory with a single class (after mode-based selection).
+ */
+type ResolvedToolSkillFactory = {
+  class: ToolSkillClass;
+  meta: ToolSkillFactory["meta"];
+};
+
+/**
  * Factory retrieval function type for dependency injection.
  * Allows injecting custom factory implementations for testing purposes.
  */
-type GetFactory = (target: SkillsProcessorToolTarget) => ToolSkillFactory;
+type GetFactory = (target: SkillsProcessorToolTarget, global: boolean) => ResolvedToolSkillFactory;
 
-const defaultGetFactory: GetFactory = (target) => {
+const defaultGetFactory: GetFactory = (target, global) => {
   const factory = toolSkillFactories.get(target);
   if (!factory) {
     throw new Error(`Unsupported tool target: ${target}`);
   }
-  return factory;
+  // Select appropriate class based on mode
+  const selectedClass = global ? factory.class : (factory.projectClass ?? factory.class);
+  return {
+    class: selectedClass,
+    meta: factory.meta,
+  };
 };
 
 // Derive tool target arrays from factory metadata
@@ -176,7 +199,7 @@ export class SkillsProcessor extends DirFeatureProcessor {
       (dir): dir is RulesyncSkill => dir instanceof RulesyncSkill,
     );
 
-    const factory = this.getFactory(this.toolTarget);
+    const factory = this.getFactory(this.toolTarget, this.global);
 
     const toolSkills = rulesyncSkills
       .map((rulesyncSkill) => {
@@ -234,7 +257,7 @@ export class SkillsProcessor extends DirFeatureProcessor {
    * Load tool-specific skill configurations and parse them into ToolSkill instances
    */
   async loadToolDirs(): Promise<AiDir[]> {
-    const factory = this.getFactory(this.toolTarget);
+    const factory = this.getFactory(this.toolTarget, this.global);
     const paths = factory.class.getSettablePaths({ global: this.global });
 
     const skillsDirPath = join(this.baseDir, paths.relativeDirPath);

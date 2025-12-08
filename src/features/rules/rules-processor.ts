@@ -21,6 +21,7 @@ import { CopilotCommand } from "../commands/copilot-command.js";
 import { CursorCommand } from "../commands/cursor-command.js";
 import { GeminiCliCommand } from "../commands/geminicli-command.js";
 import { RooCommand } from "../commands/roo-command.js";
+import { CodexCliSimulatedSkill } from "../skills/codexcli-simulated-skill.js";
 import { CodexCliSkill } from "../skills/codexcli-skill.js";
 import { CopilotSkill } from "../skills/copilot-skill.js";
 import { CursorSkill } from "../skills/cursor-skill.js";
@@ -292,13 +293,12 @@ export class RulesProcessor extends FeatureProcessor {
               subagents: {
                 relativeDirPath: CodexCliSubagent.getSettablePaths().relativeDirPath,
               },
-              // Codex CLI skills are only supported in global mode
-              ...(this.global && {
-                skills: {
-                  relativeDirPath: CodexCliSkill.getSettablePaths({ global: this.global })
-                    .relativeDirPath,
-                },
-              }),
+              // Codex CLI skills: native in global mode, simulated in project mode
+              skills: {
+                relativeDirPath: this.global
+                  ? CodexCliSkill.getSettablePaths({ global: true }).relativeDirPath
+                  : CodexCliSimulatedSkill.getSettablePaths().relativeDirPath,
+              },
             }) +
             rootRule.getFileContent(),
         );
